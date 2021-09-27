@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Minutnik</string>
+    <string name="select_time">SELECT TIME</string>
+    <string name="time_empty">0</string>
+    <string name="button_stop">STOP</string>
+    <string name="button_start">START</string>
 </resources>

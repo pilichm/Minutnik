@@ -4,5 +4,7 @@
     <string name="time_empty">0</string>
     <string name="button_stop">STOP</string>
     <string name="button_start">START</string>
+    <string name="button_resume">RESUME</string>
+    <string name="button_restart">RESTART</string>
     <string name="seconds">sec</string>
 </resources>

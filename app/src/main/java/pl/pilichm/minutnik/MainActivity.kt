@@ -1,14 +1,19 @@
 package pl.pilichm.minutnik
 
+import android.graphics.Color
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
+import pl.pilichm.minutnik.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     private var mSelectedTime: Int = 0
     private var mOriginalTIme: Int = 0
     private var isCounterRunning = false
@@ -17,26 +22,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setUpSeekBar()
         setUpButtonListeners()
     }
 
     private fun setUpSeekBar(){
-        selectTimeSeekBar.progress = MAX_TIMER_VALUE_IN_SECONDS/2
-        selectTimeSeekBar.max = MAX_TIMER_VALUE_IN_SECONDS
+        binding.selectTimeSeekBar.progress = MAX_TIMER_VALUE_IN_SECONDS/2
+        binding.selectTimeSeekBar.max = MAX_TIMER_VALUE_IN_SECONDS
         mSelectedTime = MAX_TIMER_VALUE_IN_SECONDS/2
         mOriginalTIme = MAX_TIMER_VALUE_IN_SECONDS/2
 
-        tvTimeLeft.text = "$mSelectedTime ${resources.getString(R.string.seconds)}"
+        binding.tvTimeLeft.text = "$mSelectedTime ${resources.getString(R.string.seconds)}"
 
-        selectTimeSeekBar.setOnSeekBarChangeListener(
+        binding.selectTimeSeekBar.setOnSeekBarChangeListener(
             object: SeekBar.OnSeekBarChangeListener {
 
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 mSelectedTime = progress
-                tvTimeLeft.text = "$mSelectedTime ${resources.getString(R.string.seconds)}"
+                binding.tvTimeLeft.text = "$mSelectedTime ${resources.getString(R.string.seconds)}"
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -46,28 +52,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpButtonListeners(){
-        btnStopStart.setOnClickListener {
+        binding.btnStopStart.setOnClickListener {
             if (isCounterRunning){
-                btnStopStart.text = resources.getString(R.string.button_start)
-                btnStopStart.visibility = View.INVISIBLE
-                llResumeRestart.visibility = View.VISIBLE
+                binding.btnStopStart.text = resources.getString(R.string.button_start)
+                binding.btnStopStart.visibility = View.INVISIBLE
+                binding.llResumeRestart.visibility = View.VISIBLE
                 mCountDownTimer!!.cancel()
                 isCounterRunning = false
-                selectTimeSeekBar.isEnabled = true
+                binding.selectTimeSeekBar.isEnabled = true
             } else {
-                btnStopStart.text = resources.getString(R.string.button_stop)
+                binding.btnStopStart.text = resources.getString(R.string.button_stop)
                 mCountDownTimer = createTimer(mSelectedTime).start()
                 isCounterRunning = true
-                selectTimeSeekBar.isEnabled = false
+                binding.selectTimeSeekBar.isEnabled = false
+                binding.ivProgressColor.drawable.colorFilter =
+                    BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                        Color.parseColor("#00FF00"), BlendModeCompat.SRC_ATOP)
             }
         }
 
-        btnResume.setOnClickListener {
+        binding.btnResume.setOnClickListener {
             showStopStartButton()
             mCountDownTimer = createTimer(mSelectedTime).start()
         }
 
-        btnRestart.setOnClickListener {
+        binding.btnRestart.setOnClickListener {
             showStopStartButton()
             mCountDownTimer = createTimer(mOriginalTIme).start()
             mSelectedTime = mOriginalTIme
@@ -75,11 +84,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showStopStartButton(){
-        llResumeRestart.visibility = View.INVISIBLE
-        btnStopStart.visibility = View.VISIBLE
-        btnStopStart.text = resources.getString(R.string.button_stop)
+        binding.llResumeRestart.visibility = View.INVISIBLE
+        binding.btnStopStart.visibility = View.VISIBLE
+        binding.btnStopStart.text = resources.getString(R.string.button_stop)
         isCounterRunning = true
-        selectTimeSeekBar.isEnabled = false
+        binding.selectTimeSeekBar.isEnabled = false
         stopSound()
     }
 
@@ -96,21 +105,38 @@ class MainActivity : AppCompatActivity() {
                 stopSound()
                 mSelectedTime--
                 val mTImeRemaining = (millisUntilFinished/ TIMER_TICK_PERIOD).toInt()
-                tvTimeLeft.text = "$mTImeRemaining ${resources.getString(R.string.seconds)}"
+                binding.tvTimeLeft.text = "$mTImeRemaining ${resources.getString(R.string.seconds)}"
                 mMediaPlayer = MediaPlayer.create(applicationContext, R.raw.tick)
                 mMediaPlayer!!.start()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    binding.ivProgressColor.drawable.colorFilter =
+                        BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                            createColorFromTImeLeft(mTImeRemaining).toArgb(), BlendModeCompat.SRC_ATOP)
+                }
             }
 
             override fun onFinish() {
                 isCounterRunning = false
-                llResumeRestart.visibility = View.INVISIBLE
-                btnStopStart.visibility = View.VISIBLE
-                btnStopStart.text = resources.getString(R.string.button_start)
-                mSelectedTime = selectTimeSeekBar.progress
-                selectTimeSeekBar.isEnabled = true
+                binding.llResumeRestart.visibility = View.INVISIBLE
+                binding.btnStopStart.visibility = View.VISIBLE
+                binding.btnStopStart.text = resources.getString(R.string.button_start)
+                mSelectedTime = binding.selectTimeSeekBar.progress
+                binding.selectTimeSeekBar.isEnabled = true
                 mMediaPlayer = MediaPlayer.create(applicationContext, R.raw.bell_two_strikes)
                 mMediaPlayer!!.start()
             }
+        }
+    }
+
+    private fun createColorFromTImeLeft(timeLeft: Int): Color {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Color.valueOf(
+                ((0.003921569*(timeLeft/100))/255).toFloat(),
+                ((255 * (timeLeft/100))/255).toFloat(),
+                0f
+            )
+        } else {
+            return Color()
         }
     }
 

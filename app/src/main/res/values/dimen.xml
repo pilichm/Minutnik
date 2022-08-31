@@ -7,4 +7,6 @@
     <!-- Text sizes -->
     <dimen name="default_text_size">24sp</dimen>
     <dimen name="timer_text_size">64sp</dimen>
+
+    <dimen name="circle_size">120dp</dimen>
 </resources>
